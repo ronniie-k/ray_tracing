@@ -1,11 +1,11 @@
-workspace "default_project"
+workspace "ray_tracing"
 	configurations {"Debug", "Release"}
 	location "../"
-	startproject "default_project"
+	startproject "ray_tracing"
 
 include "../vendor/Glad"
 
-project "default_project"
+project "ray_tracing"
 	kind "ConsoleApp"
 	language "C++"
 	cppdialect "C++17"
