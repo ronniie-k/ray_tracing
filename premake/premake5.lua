@@ -8,7 +8,7 @@ include "../vendor/Glad"
 project "ray_tracing"
 	kind "ConsoleApp"
 	language "C++"
-	cppdialect "C++17"
+	cppdialect "C++20"
 	targetdir "../bin/%{cfg.buildcfg}"
 	objdir "../bin-int"
 
@@ -23,7 +23,8 @@ project "ray_tracing"
 		"../vendor/glm",
 		"../vendor/SFML/include",
 		"../vendor/Glad/include",
-		"../vendor/spdlog/include"
+		"../vendor/spdlog/include",
+		"../vendor/stb"
 	}
 
 	libdirs
