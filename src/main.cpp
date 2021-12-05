@@ -1,21 +1,19 @@
 #include<iostream>
 #include<glm/glm.hpp>
 
-#include<glad/glad.h>
-
-#include<SFML/Graphics.hpp>
-
 #include"Log.h"
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include<stb_image_write.h>
 
 int main()
 {
-    Log::get();
-
-    Log::trace("{}", 5);
-    Log::info("{}", 4);
-    Log::warn("aaaaaa");
-    Log::error("error");
-    Log::critical("bad");
-
+    unsigned char* data = new unsigned char[3];
+    int width = 1;
+    int height = 1;
+    int channels = 3;
+    *data = 0;
+    *(data + 1) = 255;
+    *(data + 2) = 0;
+    stbi_write_png("output/test.png", width, height, channels, data, width * channels);
     return 0;
 }
