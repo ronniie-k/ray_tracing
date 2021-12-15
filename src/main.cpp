@@ -2,18 +2,18 @@
 #include<glm/glm.hpp>
 
 #include"Log.h"
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include<stb_image_write.h>
+#include"Renderer/Renderer.h"
 
 int main()
 {
-    unsigned char* data = new unsigned char[3];
-    int width = 1;
-    int height = 1;
-    int channels = 3;
-    *data = 0;
-    *(data + 1) = 255;
-    *(data + 2) = 0;
-    stbi_write_png("output/test.png", width, height, channels, data, width * channels);
+    Image img;
+    img.width = 1280;
+    img.height = 720;
+    img.channels = 3;
+    img.step = img.width * img.channels;
+    img.aspectRatio = static_cast<float>(img.width) / img.height;
+
+    Renderer r(img);
+    r.draw();
     return 0;
 }
