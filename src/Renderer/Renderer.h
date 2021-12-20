@@ -4,16 +4,7 @@
 
 #include"Camera.h"
 #include"Ray.h"
-
-struct Image
-{
-	unsigned width = 1;
-	unsigned height = 1;
-	unsigned channels = 1;
-	unsigned step = 1;
-	float aspectRatio = 1;
-	unsigned char* data = nullptr;
-};
+#include"../Texture/Image.h"
 
 class Renderer
 {

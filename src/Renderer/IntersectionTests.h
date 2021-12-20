@@ -10,5 +10,5 @@
 namespace Intersection
 {
 	bool triangle_halfPlane(Ray& r, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2);
-	bool triangle_barycentric(Ray& r, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2);
+	bool triangle_barycentric(Ray& r, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2, float& u, float& v);
 }

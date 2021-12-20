@@ -3,15 +3,12 @@
 
 #include"Log.h"
 #include"Renderer/Renderer.h"
+#include"Texture/Image.h"
 
 int main()
 {
-    Image img;
-    img.width = 1280;
-    img.height = 720;
-    img.channels = 3;
-    img.step = img.width * img.channels;
-    img.aspectRatio = static_cast<float>(img.width) / img.height;
+    Image img(1280, 720, 3);
+    img.data = new unsigned char[img.width * img.height * img.channels];
 
     Renderer r(img);
     r.draw();
