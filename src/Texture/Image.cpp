@@ -8,8 +8,8 @@ Image::Image(unsigned width, unsigned height, unsigned channels)
 
 Image::~Image()
 {
-	if(data != nullptr)
-		delete[] data;
+	//if(data != nullptr)
+	//	delete[] data;
 }
 
 Image::Image(const Image& other)

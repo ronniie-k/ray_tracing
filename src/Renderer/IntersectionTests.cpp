@@ -60,28 +60,26 @@ bool Intersection::Triangle::barycentric(Ray& r, float& t, const Vertex& v0, con
 	glm::vec3 c1 = hit - v1.position;
 	glm::vec3 c2 = hit - v2.position;
 
-	glm::vec3 perpendicular;
-
-	//3 half plane tests
-	perpendicular = glm::cross(e0, c0);
-	if(glm::dot(normal, perpendicular) <= 0)
+	float area = glm::length(glm::cross(e0, e2));
+	float alpha = glm::length(glm::cross(e1, c1)) / area;
+	if(alpha < 0 || alpha > 1)
 		return false;
 
-	perpendicular = glm::cross(e1, c1);
-	u = glm::dot(normal, perpendicular);
-	if(u < 0)
+	float beta = glm::length(glm::cross(e2, c2)) / area;
+	if(beta < 0 || beta > 1)
 		return false;
 
-	perpendicular = glm::cross(e2, c2);
-	v = glm::dot(normal, perpendicular);
-	if(v < 0)
+	float gamma = glm::length(glm::cross(e0, c0)) / area;
+	if(gamma < 0 || gamma > 1)
 		return false;
 
-	u /= glm::dot(normal, normal);
-	v /= glm::dot(normal, normal);
+	if(alpha + beta + gamma > 1)
+		return false;
 
+	u = beta;
+	v = gamma;
 	return true;
-	//idea behind this algorithm is to compute the area of the triangle (N dot N) and the triangles
+	//idea behind this algorithm is to compute the area of the triangle and the triangles
 	//which are created by making edges from v0, v1 and v2 to the point where r hits
 	//the ratio of these areas gives the barycentric coordinates
 }

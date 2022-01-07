@@ -45,7 +45,7 @@ void Renderer::draw()
 		{
 			Ray r = getRayThroughPixel(pixel.x, pixel.y);
 			float u, v, t;
-			if(Intersection::Triangle::mollerTrumbore(r, t, m_cube[i], m_cube[i + 1], m_cube[i + 2], u, v))
+			if(Intersection::Triangle::barycentric(r, t, m_cube[i], m_cube[i + 1], m_cube[i + 2], u, v))
 			{
 				float depth = r(t).z;
 				int depthBufferIndex = index(pixel.x, pixel.y);
@@ -77,7 +77,7 @@ Ray Renderer::getRayThroughPixel(int x, int y)
 	glm::vec3 pixelToWorld(0.f);
 	pixelToWorld += 2.f * (((x + 0.5f) / m_image.width) - 0.5f) * m_image.aspectRatio * fovScale * m_camera.right;
 	pixelToWorld += -2.f * (((y + 0.5f) / m_image.height) - 0.5f) * fovScale * m_camera.up;
-	pixelToWorld += m_camera.position + m_camera.lookAt;
+	pixelToWorld += -m_camera.position + m_camera.lookAt;
 	return Ray(m_camera.position, glm::normalize(pixelToWorld));
 }
 
