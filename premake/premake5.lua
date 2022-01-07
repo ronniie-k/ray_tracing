@@ -20,11 +20,13 @@ project "ray_tracing"
 
 	includedirs
 	{
+		"../src",
 		"../vendor/glm",
 		"../vendor/SFML/include",
 		"../vendor/Glad/include",
 		"../vendor/spdlog/include",
-		"../vendor/stb"
+		"../vendor/stb",
+		"../vendor/tinyobjloader",
 	}
 
 	libdirs

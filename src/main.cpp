@@ -4,6 +4,7 @@
 #include"Log.h"
 #include"Renderer/Renderer.h"
 #include"Texture/Image.h"
+#include"Model/Model.h"
 
 int main()
 {

@@ -3,17 +3,16 @@
 struct Image
 {
 	Image() = default;
-	Image(unsigned width, unsigned height, unsigned channels)
-		:width(width), height(height), channels(channels)
-	{
-		calculateData();
-	}
+	Image(unsigned width, unsigned height, unsigned channels);
+	~Image();
 
-	void calculateData()
-	{
-		step = channels * width;
-		aspectRatio = static_cast<float>(width) / height;
-	}
+	Image(const Image& other);
+	Image& operator=(const Image& rhs);
+
+	Image(Image&& other);
+	Image& operator=(Image&& rhs);
+
+	void calculateData();
 
 	unsigned width = 1;
 	unsigned height = 1;

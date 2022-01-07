@@ -4,76 +4,65 @@
 #include<stb_image_write.h>
 #include<vector>
 #include<glm/geometric.hpp>
-#include<glm/mat4x4.hpp>
-#include<glm/gtc/matrix_transform.hpp>
 
-#include"../Log.h"
+#include"Log.h"
 #include"IntersectionTests.h"
-#include"../Texture/Texture.h"
-
-std::vector<glm::vec3> tri =
-{
-	{1, 1, 1},
-	{-1, -1, 1},
-	{1, -1, 1},
-};
-
-std::vector<glm::vec3> colors =
-{
-	{1, 0, 0},
-	{0, 1, 0},
-	{1, 0, 1},
-};
-
-std::vector<glm::vec2> texcoords =
-{
-	{1, 1},
-	{0, 0},
-	{1, 0},
-};
 
 Renderer::Renderer(const Image& image)
-	:m_image(image)
+	:m_image(image), m_cube("res/models/cube/cube.obj"), m_texture("res/textures/test.png")
 {
-	glm::vec3 up = {0, 1, 0};
-	m_camera.position = {0, 0.5, 0};
+	//fill data with empty values
+	m_depthBuffer = new float[m_image.width * m_image.height];
+	constexpr float inf = std::numeric_limits<float>::infinity();
+
+	for(unsigned y = 0; y < m_image.height; y++)
+		for(unsigned x = 0; x < m_image.width; x++)
+			m_depthBuffer[index(x, y)] = inf;
+
+	for(unsigned y = 0; y < m_image.height * m_image.channels; y++)
+		for(unsigned x = 0; x < m_image.width * m_image.channels; x++)
+			m_image.data[index(x, y)] = 0;
+
+
+	m_camera.position = {0, 0, 0};
 	m_camera.target = {0, 0, 1};
 
 	m_camera.lookAt = glm::normalize(m_camera.target - m_camera.position);
-	m_camera.right = glm::normalize(glm::cross(up, m_camera.lookAt));
+	m_camera.right = glm::normalize(glm::cross({0, 1, 0}, m_camera.lookAt));
 	m_camera.up = glm::cross(m_camera.lookAt, m_camera.right);
 }
 
 void Renderer::draw()
 {
-	Texture t("res/textures/test.png");
-	for(int y = 0; y < m_image.height * m_image.channels; y += m_image.channels)
-		for(int x = 0; x < m_image.width * m_image.channels; x += m_image.channels)
+	for(unsigned y = 0; y < m_image.height * m_image.channels; y += m_image.channels)
+	for(unsigned x = 0; x < m_image.width * m_image.channels; x += m_image.channels)
+	{
+		glm::ivec2 pixel;
+		pixel.x = x / m_image.channels;
+		pixel.y = y / m_image.channels;
+
+		for(unsigned i = 0; i < m_cube.size(); i += 3)
 		{
-			Ray r = getRayThroughPixel(x / m_image.channels, y / m_image.channels);
-			float u, v;
-			if(Intersection::triangle_barycentric(r, tri[0], tri[1], tri[2], u, v))
+			Ray r = getRayThroughPixel(pixel.x, pixel.y);
+			float u, v, t;
+			if(Intersection::Triangle::mollerTrumbore(r, t, m_cube[i], m_cube[i + 1], m_cube[i + 2], u, v))
 			{
-				//Log::info("u: {}, v: {}, w: {}", u, v, 1 - u - v);
-				glm::vec3 color = glm::vec3(0) + u * colors[0] + v * colors[1] + (1 - u - v) * colors[2];
-				color = t.getColor(u * texcoords[0] + v * texcoords[1] + (1 - u - v) * texcoords[2]);
-				//Log::info("u: {}, v: {}, w: {}", color.r, color.g, color.b);
+				float depth = r(t).z;
+				int depthBufferIndex = index(pixel.x, pixel.y);
 
-				/*m_image.data[index(x, y)] = 255 * color.r;
-				m_image.data[index(x, y) + 1] = 255 * color.g;
-				m_image.data[index(x, y) + 2] = 255 * color.b;*/
-
-				m_image.data[index(x, y)] = color.r;
-				m_image.data[index(x, y) + 1] = color.g;
-				m_image.data[index(x, y) + 2] = color.b;
+				if(depth < m_depthBuffer[depthBufferIndex])
+				{
+					m_depthBuffer[depthBufferIndex] = depth;
+					glm::vec3 color = m_texture.getColor((1 - v - u) * m_cube[i].uv + u * m_cube[i + 1].uv + v * m_cube[i + 2].uv);
+					setPixelColor(x, y, color);
+				}
 			}
 			else
 			{
-				m_image.data[index(x, y)] = 0;
-				m_image.data[index(x, y) + 1] = 0;
-				m_image.data[index(x, y) + 2] = 0;
+				//
 			}
 		}
+	}
 	stbi_write_png("output/test.png", m_image.width, m_image.height, m_image.channels, m_image.data, m_image.step);
 }
 
@@ -84,13 +73,20 @@ int Renderer::index(int x, int y)
 
 Ray Renderer::getRayThroughPixel(int x, int y)
 {
-	float fovScale = 1.428184; //tan55
-	glm::vec3 pixelWorld(0.f);
-	pixelWorld += 2.f * (((x + 0.5f) / m_image.width) - 0.5f) * m_image.aspectRatio * fovScale * m_camera.right;
-	pixelWorld += -2.f * (((y + 0.5f) / m_image.height) - 0.5f) * fovScale * m_camera.up;
-	pixelWorld += m_camera.position + m_camera.lookAt;
+	float fovScale = 1.428184f; //tan55
+	glm::vec3 pixelToWorld(0.f);
+	pixelToWorld += 2.f * (((x + 0.5f) / m_image.width) - 0.5f) * m_image.aspectRatio * fovScale * m_camera.right;
+	pixelToWorld += -2.f * (((y + 0.5f) / m_image.height) - 0.5f) * fovScale * m_camera.up;
+	pixelToWorld += m_camera.position + m_camera.lookAt;
+	return Ray(m_camera.position, glm::normalize(pixelToWorld));
+}
 
-	return Ray(m_camera.position, glm::normalize(pixelWorld - m_camera.position));
+void Renderer::setPixelColor(int x, int y, const glm::vec3& color)
+{
+	int imageIndex = index(x, y);
+	m_image.data[imageIndex + 0] = static_cast<unsigned char>(color.r);
+	m_image.data[imageIndex + 1] = static_cast<unsigned char>(color.g);
+	m_image.data[imageIndex + 2] = static_cast<unsigned char>(color.b);
 }
 
 

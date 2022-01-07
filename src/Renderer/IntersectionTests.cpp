@@ -1,8 +1,9 @@
 #include "IntersectionTests.h"
 
 #include<glm/geometric.hpp>
+#include<glm/matrix.hpp>
 
-bool Intersection::triangle_halfPlane(Ray& r, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2)
+bool Intersection::Triangle::halfPlane(Ray& r, float& t, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2)
 {
 	//ray-plane intersection
 	glm::vec3 v0v1 = v1 - v0;
@@ -14,7 +15,7 @@ bool Intersection::triangle_halfPlane(Ray& r, const glm::vec3& v0, const glm::ve
 
 	if(deno <= 0.0001) //divide by 0 = :(, this also means that r is (almost) perpendicular and will never hit
 		return false;
-	float t = numerator / deno;
+	t = numerator / deno;
 
 	if(t < 0) //plane is behind ray's origin and therefore camera
 		return false;
@@ -35,35 +36,33 @@ bool Intersection::triangle_halfPlane(Ray& r, const glm::vec3& v0, const glm::ve
 		&& glm::dot(normal, glm::cross(e2, c2)) > 0;
 }
 
-bool Intersection::triangle_barycentric(Ray& r, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2, float& u, float& v)
+bool Intersection::Triangle::barycentric(Ray& r, float& t, const Vertex& v0, const Vertex& v1, const Vertex& v2, float& u, float& v)
 {
 	//ray-plane intersection
-	glm::vec3 v0v1 = v1 - v0;
-	glm::vec3 v0v2 = v2 - v0;
-	glm::vec3 normal = glm::cross(v0v1, v0v2);
+	glm::vec3 e0 = v1.position - v0.position;
+	glm::vec3 e1 = v2.position - v1.position;
+	glm::vec3 e2 = v0.position - v2.position;
+	glm::vec3 normal = v0.normal;
 
 	float deno = glm::dot(normal, r.direction);
-	float numerator = (glm::dot(normal, v0) + glm::dot(normal, r.origin));
+	float numerator = (glm::dot(normal, v0.position) + glm::dot(normal, r.origin));
 
-	if(deno <= 0.0001) //divide by 0 = :(, this also means that r is (almost) perpendicular (to normal so parallel to surface of tri) and will never hit
+	if(std::abs(deno) <= 0.0001) //divide by 0 = :(, this also means that r is perpendicular (to normal so parallel to surface of tri) and will never hit
 		return false;
-	float t = numerator / deno;
+	t = numerator / deno;
 
 	if(t < 0) //plane is behind ray's origin and therefore camera
 		return false;
 
 	glm::vec3 hit = r(t);
 
-	glm::vec3 e0 = v1 - v0;
-	glm::vec3 e1 = v2 - v1;
-	glm::vec3 e2 = v0 - v2;
-
-	glm::vec3 c0 = hit - v0;
-	glm::vec3 c1 = hit - v1;
-	glm::vec3 c2 = hit - v2;
+	glm::vec3 c0 = hit - v0.position;
+	glm::vec3 c1 = hit - v1.position;
+	glm::vec3 c2 = hit - v2.position;
 
 	glm::vec3 perpendicular;
 
+	//3 half plane tests
 	perpendicular = glm::cross(e0, c0);
 	if(glm::dot(normal, perpendicular) <= 0)
 		return false;
@@ -82,21 +81,64 @@ bool Intersection::triangle_barycentric(Ray& r, const glm::vec3& v0, const glm::
 	v /= glm::dot(normal, normal);
 
 	return true;
+	//idea behind this algorithm is to compute the area of the triangle (N dot N) and the triangles
+	//which are created by making edges from v0, v1 and v2 to the point where r hits
+	//the ratio of these areas gives the barycentric coordinates
+}
 
-	float areaAlpha = glm::length(glm::cross(e1, c1));
-	float areaBeta = glm::length(glm::cross(e2, c2));
-	float areaGamma = glm::length(glm::cross(e0, c0));
-	float area = glm::length(glm::cross(e0, e2));
+//code was taken from https://cadxfem.org/inf/Fast%20MinimumStorage%20RayTriangle%20Intersection.pdf
+//and modified for glm/c++
+bool Intersection::Triangle::mollerTrumbore(Ray& r, float& t, const Vertex& v0, const Vertex& v1, const Vertex& v2, float& u, float& v)
+{
+	glm::vec3 pvec, tvec, qvec;
+	glm::vec3 e0, e1;
+	float invDet;
 
-	float alpha = areaAlpha / area;
-	float beta = areaBeta / area;
-	float gamma = areaGamma / area;
+	e0 = v1.position - v0.position;
+	e1 = v2.position - v0.position;
 
-	v = alpha;
-	u = beta;
+	//scalar triple product
+	pvec = glm::cross(r.direction, e1);
+	float det = glm::dot(e0, pvec);
+#ifdef CULL
+	if(det < 0.00001f)
+		return false;
 
-	return alpha >= 0 && alpha <= 1
-		&& beta >= 0 && beta <= 1
-		&& gamma >= 0 && gamma <= 1
-		&& (alpha + beta + gamma) <= 1;
+	tvec = r.origin - v0.position;
+	u = glm::dot(pvec, tvec);
+
+	if(u < 0.f || u > det)
+		return false;
+
+	qvec = glm::cross(tvec, e0);
+	v = glm::dot(r.direction, qvec);
+
+	if(v < 0.f || u + v > det)
+		return false;
+
+	t = glm::dot(e1, qvec);
+
+	invDet = 1.f / det;
+	t *= invDet;
+	u *= invDet;
+	v *= invDet;
+#else
+	if(det > -0.00001f && det < 0.00001f)
+		return 0;
+
+	invDet = 1.f / det;
+
+	tvec = r.origin - v0.position;
+	u = glm::dot(tvec, pvec) * invDet;
+	if(u < 0.f || u > 1.f)
+		return false;
+
+	qvec = glm::cross(tvec, e0);
+	v = glm::dot(r.direction, qvec) * invDet;
+	if(v < 0.f || u + v > 1.f)
+		return 0;
+
+	t = glm::dot(e1, qvec) * invDet;
+#endif // CULL
+	return t > 0;
 }
