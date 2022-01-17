@@ -38,14 +38,14 @@ Model::Model(const std::string& filepath)
 				v.position.z = 2 + attrib.vertices[3 * index.vertex_index + 2];
 			}
 
-			if(index.vertex_index >= 0)
+			if(index.normal_index >= 0)
 			{
 				v.normal.x = attrib.normals[3 * index.normal_index];
 				v.normal.y = attrib.normals[3 * index.normal_index + 1];
 				v.normal.z = attrib.normals[3 * index.normal_index + 2];
 			}
 
-			if(index.vertex_index >= 0)
+			if(index.texcoord_index >= 0)
 			{
 				v.uv.x = attrib.texcoords[2 * index.texcoord_index];
 				v.uv.y = attrib.texcoords[2 * index.texcoord_index + 1];

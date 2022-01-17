@@ -1,6 +1,6 @@
 #include "Renderer.h"
 
-#define STB_IMAGE_WRITE_IMPLEMENTATION
+//#define STB_IMAGE_WRITE_IMPLEMENTATION
 #include<stb_image_write.h>
 #include<vector>
 #include<glm/geometric.hpp>
