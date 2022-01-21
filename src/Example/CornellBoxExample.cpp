@@ -9,7 +9,7 @@
 #include"Renderer/IntersectionTests.h"
 #include"Model/Material.h"
 
-glm::vec3 BlinnPhongg(const glm::vec3& cameraPos, const glm::vec3& pixelPos, const glm::vec3& lightPos, const glm::vec3& normal, const Material& mat);
+glm::vec3 BlinnPhong(const glm::vec3& cameraPos, const glm::vec3& pixelPos, const glm::vec3& lightPos, const glm::vec3& normal, const Material& mat);
 
 CornellBoxExample::CornellBoxExample(Image& img)
 	:Example(img), m_cornellBox("res/models/CornellBoxOriginal/CornellBoxOriginal.obj", {0, -1, -1.2})
@@ -35,21 +35,30 @@ void CornellBoxExample::draw()
 			{
 				Ray r = getRayThroughPixel(pixel.x, pixel.y);
 				float u, v, t;
+
 				if(Intersection::Triangle::mollerTrumbore(r, t, m_cornellBox[i], m_cornellBox[i + 1], m_cornellBox[i + 2], u, v))
 				{
-					float depth = r(t).z;
+					glm::vec3 intersectionPos = r(t);
 					int depthBufferIndex = index(pixel.x, pixel.y);
 
-					if(depth < m_depthBuffer[depthBufferIndex])
+					if(std::abs(intersectionPos.z) < m_depthBuffer[depthBufferIndex])
 					{
 						glm::vec3 color = {255, 255, 255};
-						m_depthBuffer[depthBufferIndex] = depth;
-						//glm::vec3 color = m_texture.getColor((1 - v - u) * m_cube[i].uv + u * m_cube[i + 1].uv + v * m_cube[i + 2].uv);
+						glm::vec3 lightPos = {0, 0.98, -1.3};
+
+						glm::vec3 dir = lightPos - intersectionPos;
+						Ray shadow(intersectionPos, dir);
+
+						m_depthBuffer[depthBufferIndex] = std::abs(intersectionPos.z);
+
 						Material mat = m_cornellBox.getMaterial(m_cornellBox[i].materialID);
-						glm::vec3 light = BlinnPhongg(m_camera.position, r(t), {0, 0.96, -1.5}, m_cornellBox[i].normal, mat);
-						light = mat.ka;
-						//light = 1;
-						setPixelColor(x, y, glm::vec3{255, 255, 255} * light);
+
+						color *= mat.ka * 0.1f;
+						//Log::info(mat.name);
+						if(!inShadow(shadow, i))
+							color *= BlinnPhong(m_camera.position, intersectionPos, lightPos, m_cornellBox[i].normal, mat);
+
+						setPixelColor(x, y, color);
 					}
 				}
 				else
@@ -61,7 +70,20 @@ void CornellBoxExample::draw()
 	stbi_write_png("output/cornellBox.png", m_image.width, m_image.height, m_image.channels, m_image.data, m_image.step);
 }
 
-glm::vec3 BlinnPhongg(const glm::vec3& cameraPos, const glm::vec3& pixelPos, const glm::vec3& lightPos, const glm::vec3& normal, const Material& mat)
+bool CornellBoxExample::inShadow(Ray& r, int index)
+{
+	for(unsigned i = 0; i < m_cornellBox.size(); i += 3)
+	{
+		float t, u, v;
+		if(Intersection::Triangle::mollerTrumbore(r, t, m_cornellBox[i], m_cornellBox[i + 1], m_cornellBox[i + 2], u, v))
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+glm::vec3 BlinnPhong(const glm::vec3& cameraPos, const glm::vec3& pixelPos, const glm::vec3& lightPos, const glm::vec3& normal, const Material& mat)
 {
 	static float kd = 0.8f; //diffuse reflectance
 	static float ks = 1.2f; //specular reflectance
@@ -80,9 +102,7 @@ glm::vec3 BlinnPhongg(const glm::vec3& cameraPos, const glm::vec3& pixelPos, con
 	glm::vec3 viewDir = glm::normalize(cameraPos - pixelPos);
 	glm::vec3 specular = mat.ks + glm::pow(glm::max(glm::dot(viewDir, reflection), 0.f), mat.ns);
 
-	glm::vec3 ambient = mat.ka * 0.1f;
-
-	return glm::min(diffuse + specular + ambient, {1, 1, 1});
+	return glm::min(diffuse + specular, {1, 1, 1});
 }
 
 //there are 32 material ids

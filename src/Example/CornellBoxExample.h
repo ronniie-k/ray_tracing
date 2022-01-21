@@ -11,5 +11,7 @@ public:
 
 	void draw() override;
 private:
+	bool inShadow(Ray& r, int index);
+private:
 	Model m_cornellBox;
 };

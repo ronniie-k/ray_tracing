@@ -6,7 +6,6 @@
 #include"Texture/Image.h"
 #include"Example/CubeExample.h"
 #include"Example/CornellBoxExample.h"
-#include"Example/BlinnPhongExample.h"
 
 using time_point_t = std::chrono::steady_clock::time_point;
 
@@ -19,9 +18,6 @@ int main()
 
     //CubeExample ce(img);
     //ce.draw();
-
-    //BlinnPhongExample bpe(img);
-    //bpe.draw();
 
     CornellBoxExample cbe(img);
     cbe.draw();
