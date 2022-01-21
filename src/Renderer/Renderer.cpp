@@ -1,6 +1,5 @@
 #include "Renderer.h"
 
-//#define STB_IMAGE_WRITE_IMPLEMENTATION
 #include<stb_image_write.h>
 #include<vector>
 #include<glm/geometric.hpp>
@@ -9,7 +8,7 @@
 #include"IntersectionTests.h"
 
 Renderer::Renderer(const Image& image)
-	:m_image(image), m_cube("res/models/cube/cube.obj"), m_texture("res/textures/test.png")
+	:m_image(image), m_cube("res/models/cube/cube.obj", {0, 0, 3}), m_texture("res/textures/test.png")
 {
 	//fill data with empty values
 	m_depthBuffer = new float[m_image.width * m_image.height];

@@ -1,6 +1,6 @@
 #include "CubeExample.h"
 
-#define STB_IMAGE_WRITE_IMPLEMENTATION
+
 #include<stb_image_write.h>
 #include<vector>
 #include<glm/geometric.hpp>
@@ -9,7 +9,7 @@
 #include"Renderer/IntersectionTests.h"
 
 CubeExample::CubeExample(Image& img)
-	:Example(img), m_cube("res/models/cube/cube.obj"), m_texture("res/textures/test.png")
+	:Example(img), m_cube("res/models/cube/cube.obj", {0, 0, 3}), m_texture("res/textures/test.png")
 {
 }
 
@@ -26,7 +26,7 @@ void CubeExample::draw()
 			{
 				Ray r = getRayThroughPixel(pixel.x, pixel.y);
 				float u, v, t;
-				if(Intersection::Triangle::barycentric(r, t, m_cube[i], m_cube[i + 1], m_cube[i + 2], u, v))
+				if(Intersection::Triangle::mollerTrumbore(r, t, m_cube[i], m_cube[i + 1], m_cube[i + 2], u, v))
 				{
 					float depth = r(t).z;
 					int depthBufferIndex = index(pixel.x, pixel.y);
