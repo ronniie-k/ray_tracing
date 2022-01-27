@@ -22,11 +22,11 @@ void CubeExample::draw()
 			pixel.x = x / m_image.channels;
 			pixel.y = y / m_image.channels;
 
-			for(unsigned i = 0; i < m_cube.size(); i += 3)
+			for(Triangle& tri : m_cube)
 			{
 				Ray r = getRayThroughPixel(pixel.x, pixel.y);
 				float u, v, t;
-				if(Intersection::Triangle::mollerTrumbore(r, t, m_cube[i], m_cube[i + 1], m_cube[i + 2], u, v))
+				if(tri.intersection(r, t, u, v))
 				{
 					float depth = r(t).z;
 					int depthBufferIndex = index(pixel.x, pixel.y);
@@ -34,7 +34,7 @@ void CubeExample::draw()
 					if(depth < m_depthBuffer[depthBufferIndex])
 					{
 						m_depthBuffer[depthBufferIndex] = depth;
-						glm::vec3 color = m_texture.getColor((1 - v - u) * m_cube[i].uv + u * m_cube[i + 1].uv + v * m_cube[i + 2].uv);
+						glm::vec3 color = m_texture.getColor((1 - v - u) * tri[0].uv + u * tri[1].uv + v * tri[2].uv);
 						setPixelColor(x, y, color);
 					}
 				}

@@ -6,8 +6,9 @@
 Example::Example(Image& img)
 	:m_image(img)
 {
+	//initialize everything
 	m_depthBuffer = new float[m_image.width * m_image.height];
-	constexpr float inf = std::numeric_limits<float>::infinity();
+	constexpr float inf = -std::numeric_limits<float>::infinity();
 
 	for(unsigned y = 0; y < m_image.height; y++)
 		for(unsigned x = 0; x < m_image.width; x++)
@@ -46,4 +47,14 @@ void Example::setPixelColor(int x, int y, const glm::vec3& color)
 	m_image.data[imageIndex + 0] = static_cast<unsigned char>(color.r);
 	m_image.data[imageIndex + 1] = static_cast<unsigned char>(color.g);
 	m_image.data[imageIndex + 2] = static_cast<unsigned char>(color.b);
+}
+
+bool Example::depthTest(float d, int index)
+{
+	if(d > m_depthBuffer[index])
+	{
+		m_depthBuffer[index] = d;
+		return true;
+	}
+	return false;
 }

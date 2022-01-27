@@ -2,7 +2,7 @@
 
 #include<glm/geometric.hpp>
 #include<glm/matrix.hpp>
-
+/*
 bool Intersection::Triangle::halfPlane(Ray& r, float& t, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2)
 {
 	//ray-plane intersection
@@ -140,3 +140,4 @@ bool Intersection::Triangle::mollerTrumbore(Ray& r, float& t, const Vertex& v0, 
 #endif // CULL
 	return t > 0;
 }
+*/
