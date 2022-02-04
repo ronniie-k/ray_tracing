@@ -1,6 +1,7 @@
 #include "Triangle.h"
 
 #include<glm/geometric.hpp>
+#include"Constants.h"
 
 Triangle::Triangle(const Vertex& v0, const Vertex& v1, const Vertex& v2, std::vector<Material>& materials)
 	:m_vertices({v0, v1, v2}), m_materials(materials)
@@ -40,7 +41,7 @@ bool Triangle::intersection(Ray& r, float& t, float& u, float& v) const //moller
 	pvec = glm::cross(r.direction, e1);
 	float det = glm::dot(e0, pvec);
 #ifdef CULL
-	if(det < 0.00001f)
+	if(det < Constants::epsilon)
 		return false;
 
 	tvec = r.origin - v0.position;
@@ -62,7 +63,7 @@ bool Triangle::intersection(Ray& r, float& t, float& u, float& v) const //moller
 	u *= invDet;
 	v *= invDet;
 #else
-	if(det > -0.00001f && det < 0.00001f)
+	if(det > -Constants::epsilon && det < Constants::epsilon)
 		return 0;
 
 	invDet = 1.f / det;
@@ -93,7 +94,7 @@ bool Triangle::intersection(Ray& r, float& t) //half plane
 	float deno = glm::dot(normal, r.direction);
 	float numerator = (glm::dot(normal, v0) + glm::dot(normal, r.origin));
 
-	if(deno <= 0.0001) //divide by 0 = :(, this also means that r is (almost) perpendicular and will never hit
+	if(deno > -Constants::epsilon && deno < Constants::epsilon) //divide by 0 = :(, this also means that r is (almost) perpendicular and will never hit
 		return false;
 	t = numerator / deno;
 
@@ -127,7 +128,7 @@ bool Triangle::intersection(Ray& r, float& t, float& u, float& v) //barycentric
 	float deno = glm::dot(normal, r.direction);
 	float numerator = (glm::dot(normal, v0.position) + glm::dot(normal, r.origin));
 
-	if(std::abs(deno) <= 0.0001) //divide by 0 = :(, this also means that r is perpendicular (to normal so parallel to surface of tri) and will never hit
+	if(deno > -Constants::epsilon && deno < Constants::epsilon) //divide by 0 = :(, this also means that r is perpendicular (to normal so parallel to surface of tri) and will never hit
 		return false;
 	t = numerator / deno;
 

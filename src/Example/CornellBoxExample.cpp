@@ -25,49 +25,46 @@ CornellBoxExample::CornellBoxExample(Image& img)
 void CornellBoxExample::draw()
 {
 	for(unsigned y = 0; y < m_image.height * m_image.channels; y += m_image.channels)
-		for(unsigned x = 0; x < m_image.width * m_image.channels; x += m_image.channels)
+	for(unsigned x = 0; x < m_image.width * m_image.channels; x += m_image.channels)
+	{
+		glm::ivec2 pixel;
+		pixel.x = x / m_image.channels;
+		pixel.y = y / m_image.channels;
+
+		for(Triangle& tri : m_cornellBox)
 		{
-			glm::ivec2 pixel;
-			pixel.x = x / m_image.channels;
-			pixel.y = y / m_image.channels;
+			Ray r = getRayThroughPixel(pixel.x, pixel.y);
+			float u, v, t;
 
-			for(Triangle& tri : m_cornellBox)
+			if(tri.intersection(r, t, u, v))
 			{
-				Ray r = getRayThroughPixel(pixel.x, pixel.y);
-				float u, v, t;
+				glm::vec3 intersectionPos = r(t);
+				int depthBufferIndex = index(pixel.x, pixel.y);
 
-				if(tri.intersection(r, t, u, v))
+				if(depthTest(intersectionPos.z, depthBufferIndex))
 				{
-					glm::vec3 intersectionPos = r(t);
-					int depthBufferIndex = index(pixel.x, pixel.y);
+					glm::vec3 color = {255, 255, 255};
+					glm::vec3 lightPos = {0, 0.85, -1.55};
 
-					if(depthTest(intersectionPos.z, depthBufferIndex))
+					glm::vec3 dir = glm::normalize(lightPos - intersectionPos);
+					Ray shadow(intersectionPos + (0.001f * dir), dir);
+
+					Material mat = tri.getMaterial();
+					glm::vec3 light = ((mat.ka * 0.2f) + BlinnPhong(m_camera.position, intersectionPos, lightPos, tri.getNormal(), mat));
+
+					if(mat.name == "light" || !inShadow(shadow))
 					{
-						glm::vec3 color = {255, 255, 255};
-						glm::vec3 lightPos = {-0, 0.85, -1.55};
-
-						glm::vec3 dir = glm::normalize(lightPos - intersectionPos);
-						Ray shadow(intersectionPos + (0.001f * dir), dir);
-
-						Material mat = tri.getMaterial();
-
-						if(mat.name == "light" || !inShadow(shadow))
-						{
-							glm::vec3 light = ((mat.ka * 0.2f) + BlinnPhong(m_camera.position, intersectionPos, lightPos, tri.getNormal(), mat));
-							color *= glm::min(light, {1, 1, 1});
-						}
-						else
-							color *= (mat.ka * 0.2f);
-						
-						setPixelColor(x, y, color);
+						//glm::vec3 light = ((mat.ka * 0.2f) + BlinnPhong(m_camera.position, intersectionPos, lightPos, tri.getNormal(), mat));
+						color *= glm::min(light, {1, 1, 1});
 					}
-				}
-				else
-				{
-					//
+					else
+						color *= (mat.ka * 0.2f);
+						
+					setPixelColor(x, y, color);
 				}
 			}
 		}
+	}
 	Log::info("abc");
 	stbi_write_png("output/cornellBox.png", m_image.width, m_image.height, m_image.channels, m_image.data, m_image.step);
 }

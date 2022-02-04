@@ -33,7 +33,7 @@ int Example::index(int x, int y)
 
 Ray Example::getRayThroughPixel(int x, int y)
 {
-	float fovScale = 1.428184f; //tan55
+	float fovScale = 1;// 1.428184f; //tan55
 	glm::vec3 pixelToWorld(0.f);
 	pixelToWorld += 2.f * (((x + 0.5f) / m_image.width) - 0.5f) * m_image.aspectRatio * fovScale * m_camera.right;
 	pixelToWorld += -2.f * (((y + 0.5f) / m_image.height) - 0.5f) * fovScale * m_camera.up;
