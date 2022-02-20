@@ -4,7 +4,12 @@
 
 #include<utility>
 
-bool AABB::intersection(Ray& r, float& tStart, float& tEnd)
+AABB::AABB(const glm::vec3& min, const glm::vec3& max)
+    :minExtent(min), maxExtent(max)
+{
+}
+
+bool AABB::intersection(Ray& r, float& tStart, float& tEnd) const
 {
     tStart = 0.f;
 
@@ -45,12 +50,11 @@ bool AABB::intersection(Ray& r, float& tStart, float& tEnd)
 
     //makes use of tmin which I dont use, also accounts for the case that r.origin is inside the AABB,
     //this is mainly as a note for the future if there is a bug, then this is the first likely solution
-    /*
+    
     if(tStart > 0.f)
         return true;
     else
         return true;
-    */
 }
 
 //reference: https://youtu.be/TrqK-atFfWY?t=1097 from the timestamp to 27:00

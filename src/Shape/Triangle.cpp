@@ -7,6 +7,14 @@ Triangle::Triangle(const Vertex& v0, const Vertex& v1, const Vertex& v2, std::ve
 	:m_vertices({v0, v1, v2}), m_materials(materials)
 {
 	m_materialID = v0.materialID;
+	m_centroid = 0.333f * v0.position * 2.f + 0.333f * v1.position + 0.333f * v2.position;
+
+	glm::vec3 min = glm::vec3(std::numeric_limits<float>::infinity());
+	glm::vec3 max = glm::vec3(-std::numeric_limits<float>::infinity());
+
+	min = glm::min(glm::min(v0.position, v1.position), v2.position);
+	max = glm::max(glm::max(v0.position, v1.position), v2.position);
+	m_boundingBox = AABB(min, max);
 }
 
 Triangle::Triangle(const std::array<Vertex, 3>& vertices, std::vector<Material>& materials)
@@ -14,14 +22,74 @@ Triangle::Triangle(const std::array<Vertex, 3>& vertices, std::vector<Material>&
 {
 }
 
-const Material& Triangle::getMaterial()
+Triangle::Triangle(const Triangle& other)
+	:m_vertices(other.m_vertices), m_centroid(other.m_centroid),
+	m_boundingBox(other.m_boundingBox), m_materials(other.m_materials),
+	m_materialID(other.m_materialID)
+{
+}
+
+Triangle& Triangle::operator=(const Triangle& rhs)
+{
+	if(this != &rhs)
+	{
+		m_vertices = rhs.m_vertices;
+		m_centroid = rhs.m_centroid;
+		m_boundingBox = rhs.m_boundingBox;
+		m_materials = rhs.m_materials;
+		m_materialID = rhs.m_materialID;
+	}
+	return *this;
+}
+
+Triangle::Triangle(Triangle&& other)
+	:m_materials(other.m_materials)
+{
+	m_vertices = std::move(other.m_vertices);
+	m_centroid = other.m_centroid;
+	m_boundingBox = other.m_boundingBox;
+	m_materialID = other.m_materialID;
+
+	other.m_centroid = glm::vec3(0);
+	other.m_boundingBox = AABB(glm::vec3(0), glm::vec3(0));
+	other.m_materialID = 0;
+}
+
+Triangle& Triangle::operator=(Triangle&& rhs)
+{
+	if(this != &rhs)
+	{
+		m_vertices = std::move(rhs.m_vertices);
+		m_centroid = rhs.m_centroid;
+		m_boundingBox = rhs.m_boundingBox;
+		m_materials = rhs.m_materials;
+		m_materialID = rhs.m_materialID;
+
+		rhs.m_centroid = glm::vec3(0);
+		rhs.m_boundingBox = AABB(glm::vec3(0), glm::vec3(0));
+		rhs.m_materialID = 0;
+	}
+	return *this;
+}
+
+const Material& Triangle::getMaterial() const
 {
 	return m_materials[m_materialID];
 }
 
-const glm::vec3& Triangle::getNormal()
+const glm::vec3& Triangle::getNormal() const
 {
 	return m_vertices[0].normal;
+}
+
+const glm::vec3& Triangle::getCentroid() const
+{
+	return m_centroid;
+}
+
+const AABB& Triangle::getBoundingBox() const
+{
+	return m_boundingBox;
 }
 
 
@@ -164,5 +232,9 @@ bool Triangle::intersection(Ray& r, float& t, float& u, float& v) //barycentric
 	//which are created by making edges from v0, v1 and v2 to the point where r hits
 	//the ratio of these areas gives the barycentric coordinates
 }
-
 #endif
+
+bool operator==(const Triangle& lhs, const Triangle& rhs)
+{
+	return lhs.getCentroid() == rhs.getCentroid();
+}

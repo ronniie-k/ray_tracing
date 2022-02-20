@@ -16,6 +16,7 @@ public:
 	std::vector<Triangle>::iterator begin() noexcept { return m_triangles.begin(); }
 	std::vector<Triangle>::iterator end() noexcept { return m_triangles.end(); }
 	const Triangle& operator[] (size_t pos) const { return m_triangles[pos]; }
+	const std::vector<Triangle> getTriangles() const { return m_triangles; }
 
 	size_t size() const noexcept { return m_triangles.size(); }
 
