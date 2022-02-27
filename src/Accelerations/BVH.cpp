@@ -100,12 +100,12 @@ bool BVH::intersect(Ray& r, IntersectionInfo& info)
                 for(int i = 0; i < node->numTris; i++)
                 {
                     float u, v;
-                    if(m_triangles[node->triOffset + 1]->intersection(r, tri, u, v))
+                    if(m_triangles[node->triOffset]->intersection(r, tri, u, v))
                     {
                         info.t = tri;
                         info.u = u;
                         info.v = v;
-                        info.tri = m_triangles[node->triOffset + 1];
+                        info.tri = m_triangles[node->triOffset];
                         hit = true;
                     }
                 }
@@ -224,13 +224,11 @@ std::shared_ptr<Node> BVH::build(std::vector<const Triangle*>& orderedTris, size
                 case SplitMethod::SortedMedian:
                 {
                     mid = (start + end) * 0.5f;
-                    //somehow this compiles, vs says no but it still does
                     std::nth_element(&m_triangles[start], &m_triangles[mid], &m_triangles[end - 1] + 1,
                     [dim](const Triangle*& a, const Triangle*& b)
                     {
                         return a->getCentroid()[dim] < b->getCentroid()[dim];
                     });
-                    //std::nth_element(m_triangles.begin(), m_triangles.begin() + mid, m_triangles.end(), std::greater{});
                 }
 				default:
 				    break;

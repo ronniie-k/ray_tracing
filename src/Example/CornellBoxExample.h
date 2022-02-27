@@ -10,6 +10,7 @@ public:
 	CornellBoxExample(Image& img);
 
 	void draw() override;
+	glm::vec3 tracePath(const glm::vec2& pixel, Ray& r, int depth);
 private:
 	bool inShadow(Ray& r);
 private:

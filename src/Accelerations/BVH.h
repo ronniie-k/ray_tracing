@@ -19,7 +19,7 @@ struct Node
 	Node();
 	Node(const AABB& bbox);
 	AABB boundingBox;
-	size_t start, end; //references m_triangles vector, these indicate what traingles are part of this node
+	size_t start, end;
 	std::shared_ptr<Node> left, right;
 	int splitAxis;
 
@@ -37,8 +37,8 @@ struct LinearNode
 		int triOffset; //leaf
 		int secondChildOffset; //interior
 	};
-	int numTris;
-	int splitAxis;
+	int numTris = 0;
+	int splitAxis = 0;
 };
 
 class BVH
@@ -57,6 +57,6 @@ private:
 	unsigned m_nodeCount = 0;
 };
 
-//implement traversal -- add the axis split stuff and fix compiler error
-//email markus to look at code
+//todo
+//sah, intersect
 //kd tree

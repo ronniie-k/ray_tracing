@@ -8,7 +8,7 @@ Example::Example(Image& img)
 {
 	//initialize everything
 	m_depthBuffer = new float[m_image.width * m_image.height];
-	constexpr float inf = -std::numeric_limits<float>::infinity();
+	constexpr float inf = std::numeric_limits<float>::infinity();
 
 	for(unsigned y = 0; y < m_image.height; y++)
 		for(unsigned x = 0; x < m_image.width; x++)
@@ -31,12 +31,12 @@ int Example::index(int x, int y)
 	return y * m_image.width + x;
 }
 
-Ray Example::getRayThroughPixel(int x, int y)
+Ray Example::getRayThroughPixel(float x, float y)
 {
 	float fovScale = 1;// 1.428184f; //tan55
 	glm::vec3 pixelToWorld(0.f);
-	pixelToWorld += 2.f * (((x + 0.5f) / m_image.width) - 0.5f) * m_image.aspectRatio * fovScale * m_camera.right;
-	pixelToWorld += -2.f * (((y + 0.5f) / m_image.height) - 0.5f) * fovScale * m_camera.up;
+	pixelToWorld += 2.f * (((x) / m_image.width) - 0.5f) * m_image.aspectRatio * fovScale * m_camera.right;
+	pixelToWorld += -2.f * (((y) / m_image.height) - 0.5f) * fovScale * m_camera.up;
 	pixelToWorld += -m_camera.position + m_camera.lookAt;
 	return Ray(m_camera.position, glm::normalize(pixelToWorld));
 }
@@ -51,9 +51,10 @@ void Example::setPixelColor(int x, int y, const glm::vec3& color)
 
 bool Example::depthTest(float d, int index)
 {
-	if(d > m_depthBuffer[index])
+	float absD = std::abs(d);
+	if(absD < m_depthBuffer[index])
 	{
-		m_depthBuffer[index] = d;
+		m_depthBuffer[index] = absD;
 		return true;
 	}
 	return false;

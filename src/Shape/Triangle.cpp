@@ -95,7 +95,6 @@ const AABB& Triangle::getBoundingBox() const
 
 //code was taken from https://cadxfem.org/inf/Fast%20MinimumStorage%20RayTriangle%20Intersection.pdf
 //and modified for glm/c++
-
 bool Triangle::intersection(Ray& r, float& t, float& u, float& v) const //moller trumbore
 {
 	glm::vec3 pvec, tvec, qvec;
@@ -112,7 +111,7 @@ bool Triangle::intersection(Ray& r, float& t, float& u, float& v) const //moller
 	if(det < Constants::epsilon)
 		return false;
 
-	tvec = r.origin - v0.position;
+	tvec = r.origin - m_vertices[0].position;
 	u = glm::dot(pvec, tvec);
 
 	if(u < 0.f || u > det)

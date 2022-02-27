@@ -15,5 +15,7 @@ private:
 	bool inShadow(Ray& r);
 private:
 	Model m_cornellBox;
+	Model m_cube;
 	BVH m_bvh;
+	Texture m_texture;
 };

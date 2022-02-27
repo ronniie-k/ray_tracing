@@ -14,10 +14,10 @@
 inline glm::vec3 BlinnPhong(const glm::vec3& cameraPos, const glm::vec3& pixelPos, const glm::vec3& lightPos, const glm::vec3& normal, const Material& mat);
 
 BVHExample::BVHExample(Image& img)
-	:Example(img), m_cornellBox("res/models/CornellBoxOriginal/CornellBoxOriginal.obj", {0, -1, -1.5}), m_bvh(m_cornellBox.getTriangles(), SplitMethod::SortedMedian)
+	:Example(img), m_cornellBox("res/models/CornellBoxOriginal/CornellBoxOriginal.obj", {0, 0, 3}), m_cube("res/models/cube/cube.obj", {0, 0, 3}), m_bvh(m_cube.getTriangles(), SplitMethod::SortedMedian), m_texture("res/textures/test.png")
 {
 	m_camera.position = {0, 0, 0};
-	m_camera.target = {0, 0, -1};
+	//m_camera.target = {0, 0, -1};
 
 	m_camera.lookAt = glm::normalize(m_camera.target - m_camera.position);
 	m_camera.right = glm::normalize(glm::cross({0, 1, 0}, m_camera.lookAt));
@@ -26,6 +26,15 @@ BVHExample::BVHExample(Image& img)
 
 void BVHExample::draw()
 {
+	glm::vec3 min(std::numeric_limits<float>::infinity());
+	glm::vec3 max(-std::numeric_limits<float>::infinity());
+	for(auto& tri : m_cube)
+	{
+		min = glm::min(tri.getBoundingBox().minExtent, min);
+		max = glm::max(tri.getBoundingBox().maxExtent, max);
+	}
+
+	AABB bbox(min, max);
 	for(unsigned y = 0; y < m_image.height * m_image.channels; y += m_image.channels)
 		for(unsigned x = 0; x < m_image.width * m_image.channels; x += m_image.channels)
 		{
@@ -35,8 +44,10 @@ void BVHExample::draw()
 
 			Ray r = getRayThroughPixel(pixel.x, pixel.y);
 			IntersectionInfo info;
+			float t, u, v;
 
-			if(m_bvh.intersect(r, info))
+			for(auto& tri : m_cube)
+			if(tri.intersection(r, t, u, v))
 			{
 				glm::vec3 intersectionPos = r(info.t);
 				int depthBufferIndex = index(pixel.x, pixel.y);
@@ -44,14 +55,14 @@ void BVHExample::draw()
 				if(depthTest(intersectionPos.z, depthBufferIndex))
 				{
 					glm::vec3 color = {255, 255, 255};
-					glm::vec3 lightPos = {0, 0.85, -1.55};
+					glm::vec3 lightPos = {0, 3, 3};
 
 					glm::vec3 dir = glm::normalize(lightPos - intersectionPos);
 					Ray shadow(intersectionPos + (0.01f * dir), dir);
 
-					Material mat = info.tri->getMaterial();
-					glm::vec3 light = ((mat.ka * 0.2f) + BlinnPhong(m_camera.position, intersectionPos, lightPos, info.tri->getNormal(), mat));
-
+					Material mat = tri.getMaterial();
+					glm::vec3 light = ((mat.ka * 0.2f) + BlinnPhong(m_camera.position, intersectionPos, lightPos, tri.getNormal(), mat));
+					
 					if(mat.name == "light" || !inShadow(shadow))
 					{
 						//glm::vec3 light = ((mat.ka * 0.2f) + BlinnPhong(m_camera.position, intersectionPos, lightPos, tri.getNormal(), mat));
@@ -59,6 +70,8 @@ void BVHExample::draw()
 					}
 					else
 						color *= (mat.ka * 0.2f);
+					
+					color = m_texture.getColor((1 - v - u) * tri[0].uv + u * tri[1].uv + v * tri[2].uv);
 
 					setPixelColor(x, y, color);
 				}
