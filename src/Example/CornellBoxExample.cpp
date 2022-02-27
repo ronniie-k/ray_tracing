@@ -25,21 +25,21 @@ CornellBoxExample::CornellBoxExample(Image& img)
 
 void CornellBoxExample::draw()
 {
-	int nSamples = 1000; //temp
-	for(unsigned y = 0; y < m_image.height * m_image.channels; y += m_image.channels)
-	for(unsigned x = 0; x < m_image.width * m_image.channels; x += m_image.channels)
+	int nSamples = 10; //temp
+	for(unsigned y = 0; y < m_image.height; y++)
+	for(unsigned x = 0; x < m_image.width; x++)
 	{
 		glm::vec3 color(0);
-		glm::ivec2 pixel;
-		pixel.x = x / m_image.channels;
-		pixel.y = y / m_image.channels;
+		glm::vec2 pixel;
+		pixel.x = x;
+		pixel.y = y;
 
 		for(int n = 0; n < nSamples; n++)
 		{
 			float xOff = Random::getFloatInRange(-0.5f, 0.5f);
 			float yOff = Random::getFloatInRange(-0.5f, 0.5f);
 			Ray r = getRayThroughPixel(pixel.x + xOff, pixel.y + yOff);
-			color += tracePath(pixel, r, 0);
+			color += tracePath(r, 0);
 		}
 
 		color /= nSamples;
@@ -102,7 +102,7 @@ void CornellBoxExample::draw()
 //to fix, go through all tris find closest
 //then do the path tracing stuff
 
-glm::vec3 CornellBoxExample::tracePath(const glm::vec2& pixel, Ray& r, int depth)
+glm::vec3 CornellBoxExample::tracePath(Ray& r, int depth)
 {
 	static int maxDepth = 5;
 	static float p = 1 / 6.28318530718f;
@@ -172,7 +172,7 @@ glm::vec3 CornellBoxExample::tracePath(const glm::vec2& pixel, Ray& r, int depth
 	glm::vec3 emittance = {0, 0, 0}; //temp
 	glm::vec3 light = glm::vec3(255) * glm::min(BRDF::blinnPhong(wi, wo, closest->getNormal(), mat) * attenuation, {1, 1, 1});
 
-	glm::vec3 li = tracePath(pixel, secondary, depth + 1);
+	glm::vec3 li = tracePath(secondary, depth + 1);
 	glm::vec3 lo = (li + light);// *dp / p;
 	return glm::min(glm::vec3(255), lo);
 	return light;
