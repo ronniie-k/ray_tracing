@@ -21,4 +21,9 @@ private:
 
 	std::random_device m_device;
 	std::mt19937 m_rng;
+
+	//this is slower
+	//values taken from https://en.cppreference.com/w/cpp/numeric/random/linear_congruential_engine
+	//std::linear_congruential_engine<std::uint_fast32_t, 16807, 0, 2147483647> m_rng;
+	//uint32_t m_seed;
 };

@@ -25,7 +25,7 @@ CornellBoxExample::CornellBoxExample(Image& img)
 
 void CornellBoxExample::draw()
 {
-	int nSamples = 10; //temp
+	int nSamples = 100; //temp
 	for(unsigned y = 0; y < m_image.height; y++)
 	for(unsigned x = 0; x < m_image.width; x++)
 	{
@@ -105,6 +105,7 @@ void CornellBoxExample::draw()
 glm::vec3 CornellBoxExample::tracePath(Ray& r, int depth)
 {
 	static int maxDepth = 5;
+	static glm::vec3 white(1.f);
 	static float p = 1 / 6.28318530718f;
 
 	if(depth >= maxDepth)
@@ -133,14 +134,10 @@ glm::vec3 CornellBoxExample::tracePath(Ray& r, int depth)
 
 	glm::vec3 lightPos = {0, 0.85, -1.55};
 	glm::vec3 intersectionPoint = r(tMin);
+	glm::vec3 surfaceNormal = closest->getNormal();
 
 	//shadow ray
 	Material mat = closest->getMaterial();
-	glm::vec3 shadowDir = glm::normalize(lightPos - intersectionPoint);
-	Ray shadow(intersectionPoint + (0.1f * shadowDir), shadowDir);
-
-	//if(inShadow(r))
-	//	return glm::vec3(0);
 
 	//generate secondary ray
 	Ray secondary;
@@ -152,15 +149,20 @@ glm::vec3 CornellBoxExample::tracePath(Ray& r, int depth)
 	float costheta = Random::getFloatInRange(-1, 1);
 	float theta = glm::acos(costheta);
 
-	glm::vec3 dir;
+	glm::vec3 dir(0.f);
 	dir.x = glm::sin(theta) * glm::cos(phi);
 	dir.y = glm::sin(theta) * glm::sin(phi);
 	dir.z = costheta;
 
+	//reference
+	//https://math.stackexchange.com/questions/4010111/how-to-generate-a-random-vector-guaranteed-to-be-within-the-hemisphere-with-res
+	if(glm::dot(surfaceNormal, dir) <= 0)
+		dir *= -1;
+
 	secondary.origin = intersectionPoint + 0.1f * dir;
 	secondary.direction = dir;
 
-	float dp = glm::dot(dir, closest->getNormal());
+	float dp = glm::dot(dir, surfaceNormal);
 
 	//brdf
 	float distance = glm::distance(lightPos, intersectionPoint);
@@ -170,12 +172,19 @@ glm::vec3 CornellBoxExample::tracePath(Ray& r, int depth)
 	glm::vec3 wo = m_camera.position - intersectionPoint;
 
 	glm::vec3 emittance = {0, 0, 0}; //temp
-	glm::vec3 light = glm::vec3(255) * glm::min(BRDF::blinnPhong(wi, wo, closest->getNormal(), mat) * attenuation, {1, 1, 1});
+	glm::vec3 brdf = BRDF::blinnPhong(wi, wo, surfaceNormal, mat) * attenuation;
 
 	glm::vec3 li = tracePath(secondary, depth + 1);
-	glm::vec3 lo = (li + light);// *dp / p;
-	return glm::min(glm::vec3(255), lo);
-	return light;
+	glm::vec3 lo = (li + brdf);// *dp / p;
+	//glm::vec3 lo = (brdf + li) * dp * p;
+
+	glm::vec3 shadowDir = glm::normalize(lightPos - intersectionPoint);
+	Ray shadow(intersectionPoint + (0.01f * surfaceNormal), shadowDir);
+
+	if(inShadow(shadow))
+		return li;
+
+	return glm::min(lo, white);
 }
 
 bool CornellBoxExample::inShadow(Ray& r)
@@ -192,4 +201,28 @@ bool CornellBoxExample::inShadow(Ray& r)
 		}
 	}
 	return false;
+
+	float tMin = std::numeric_limits<float>::infinity();
+	Triangle* closest = nullptr;
+	//get closest intersection
+	for(Triangle& tri : m_cornellBox)
+	{
+		float u, v, t;
+
+		if(tri.intersection(r, t, u, v))
+		{
+			if(t < tMin)
+			{
+				tMin = t;
+				closest = &tri;
+			}
+		}
+	}
+	if(closest == nullptr)
+		return false;
+
+	if(closest->getMaterial().name == "light" || tMin <= 0)
+		return false;
+
+	return true;
 }

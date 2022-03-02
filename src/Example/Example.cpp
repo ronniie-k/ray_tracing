@@ -44,9 +44,9 @@ Ray Example::getRayThroughPixel(float x, float y)
 void Example::setPixelColor(int x, int y, const glm::vec3& color)
 {
 	int imageIndex = index(x * m_image.channels, y * m_image.channels);
-	m_image.data[imageIndex + 0] = static_cast<unsigned char>(color.r);
-	m_image.data[imageIndex + 1] = static_cast<unsigned char>(color.g);
-	m_image.data[imageIndex + 2] = static_cast<unsigned char>(color.b);
+	m_image.data[imageIndex + 0] = static_cast<unsigned char>(255.f * color.r);
+	m_image.data[imageIndex + 1] = static_cast<unsigned char>(255.f * color.g);
+	m_image.data[imageIndex + 2] = static_cast<unsigned char>(255.f * color.b);
 }
 
 bool Example::depthTest(float d, int index)

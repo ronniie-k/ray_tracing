@@ -27,6 +27,7 @@ project "ray_tracing"
 		"../vendor/spdlog/include",
 		"../vendor/stb",
 		"../vendor/tinyobjloader",
+		"../vendor/pcg/include",
 	}
 
 	libdirs
