@@ -7,12 +7,8 @@
 class CornellBoxExample : public Example
 {
 public:
-	CornellBoxExample(Image& img);
+	CornellBoxExample(Image& img, int maxDepth, int nSamples);
 
 	void draw() override;
-	glm::vec3 tracePath(Ray& r, int depth);
 private:
-	bool inShadow(Ray& r);
-private:
-	Model m_cornellBox;
 };

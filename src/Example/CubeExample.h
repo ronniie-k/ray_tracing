@@ -12,6 +12,6 @@ public:
 
 	void draw() override;
 private:
-	Model m_cube;
 	Texture m_texture;
+	Triangle m_triangle;
 };

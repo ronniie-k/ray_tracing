@@ -1,6 +1,5 @@
 #pragma once
 
-#include"Shape.h"
 #include"Vertex.h"
 #include"Renderer/Ray.h"
 #include"Model/Material.h"
@@ -9,7 +8,7 @@
 #include<array>
 #include<vector>
 
-class Triangle : public Shape
+class Triangle
 {
 public:
 	Triangle(const Vertex& v0, const Vertex& v1, const Vertex& v2, std::vector<Material>& materials);
@@ -36,9 +35,6 @@ private:
 	std::array<Vertex, 3> m_vertices;
 	glm::vec3 m_centroid;
 	AABB m_boundingBox;
-	//--this may change in the future--
-	//in a scene, every triangle must be part of a model
-	//to create a cleaner interface i store a reference to the model's materials here
 	std::vector<Material>& m_materials;
 	int m_materialID; //i also assume that all vertices in a triangle share the same material properties
 };

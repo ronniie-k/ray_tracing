@@ -1,6 +1,7 @@
 #include "Random.h"
 
 #include<chrono>
+#include<glm/trigonometric.hpp>
 
 Random::Random()
     //:m_seed(std::chrono::system_clock::now().time_since_epoch().count())

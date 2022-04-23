@@ -13,6 +13,12 @@ class Model
 public:
 	Model(const std::string& filepath, const glm::vec3& offset);
 
+	Model(Model& other);
+	Model& operator=(const Model& rhs);
+
+	Model(Model&& other);
+	Model& operator=(Model&& rhs);
+
 	std::vector<Triangle>::iterator begin() noexcept { return m_triangles.begin(); }
 	std::vector<Triangle>::iterator end() noexcept { return m_triangles.end(); }
 	const Triangle& operator[] (size_t pos) const { return m_triangles[pos]; }

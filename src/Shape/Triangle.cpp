@@ -1,6 +1,9 @@
 #include "Triangle.h"
 
 #include<glm/geometric.hpp>
+#include<chrono>
+
+#include"Timer.h"
 #include"Constants.h"
 
 Triangle::Triangle(const Vertex& v0, const Vertex& v1, const Vertex& v2, std::vector<Material>& materials)
@@ -92,11 +95,13 @@ const AABB& Triangle::getBoundingBox() const
 	return m_boundingBox;
 }
 
-
+#if 1
 //code was taken from https://cadxfem.org/inf/Fast%20MinimumStorage%20RayTriangle%20Intersection.pdf
 //and modified for glm/c++
 bool Triangle::intersection(Ray& r, float& t, float& u, float& v) const //moller trumbore
 {
+	auto begin = std::chrono::high_resolution_clock::now();
+
 	glm::vec3 pvec, tvec, qvec;
 	glm::vec3 e0, e1;
 	float invDet;
@@ -147,21 +152,27 @@ bool Triangle::intersection(Ray& r, float& t, float& u, float& v) const //moller
 
 	t = glm::dot(e1, qvec) * invDet;
 #endif // CULL
+
+	auto end = std::chrono::high_resolution_clock::now();
+	Timer::add("triIntersection()", std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count());
+
 	return t > 0;
 }
+#endif
 
 #if 0
-bool Triangle::intersection(Ray& r, float& t) //half plane
+bool Triangle::intersection(Ray& r, float& t, float& u, float& v) const//half plane
 {
+	auto begin = std::chrono::high_resolution_clock::now();
 	//ray-plane intersection
 	glm::vec3 v0v1 = m_vertices[1].position - m_vertices[0].position;
 	glm::vec3 v0v2 = m_vertices[2].position - m_vertices[0].position;
 	glm::vec3 normal = glm::cross(v0v1, v0v2);
 
 	float deno = glm::dot(normal, r.direction);
-	float numerator = (glm::dot(normal, v0) + glm::dot(normal, r.origin));
+	float numerator = (glm::dot(normal, m_vertices[0].position) + glm::dot(normal, r.origin));
 
-	if(deno > -Constants::epsilon && deno < Constants::epsilon) //divide by 0 = :(, this also means that r is (almost) perpendicular and will never hit
+	if(deno > -Constants::epsilon && deno < Constants::epsilon)
 		return false;
 	t = numerator / deno;
 
@@ -178,14 +189,23 @@ bool Triangle::intersection(Ray& r, float& t) //half plane
 	glm::vec3 c1 = hit - m_vertices[1].position;
 	glm::vec3 c2 = hit - m_vertices[2].position;
 
+	auto end = std::chrono::high_resolution_clock::now();
+	Timer::add("triIntersection()", std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count());
+
+	u = 0;
+	v = 0;
+
 	//3 half plane tests
 	return glm::dot(normal, glm::cross(e0, c0)) > 0
 		&& glm::dot(normal, glm::cross(e1, c1)) > 0
 		&& glm::dot(normal, glm::cross(e2, c2)) > 0;
 }
+#endif
 
-bool Triangle::intersection(Ray& r, float& t, float& u, float& v) //barycentric
+#if 0
+bool Triangle::intersection(Ray& r, float& t, float& u, float& v) const //barycentric
 {
+	auto begin = std::chrono::high_resolution_clock::now();
 	//ray-plane intersection
 	glm::vec3 e0 = m_vertices[1].position - m_vertices[0].position;
 	glm::vec3 e1 = m_vertices[2].position - m_vertices[1].position;
@@ -193,7 +213,7 @@ bool Triangle::intersection(Ray& r, float& t, float& u, float& v) //barycentric
 	glm::vec3 normal = m_vertices[0].normal;
 
 	float deno = glm::dot(normal, r.direction);
-	float numerator = (glm::dot(normal, v0.position) + glm::dot(normal, r.origin));
+	float numerator = (glm::dot(normal, m_vertices[0].position) + glm::dot(normal, r.origin));
 
 	if(deno > -Constants::epsilon && deno < Constants::epsilon) //divide by 0 = :(, this also means that r is perpendicular (to normal so parallel to surface of tri) and will never hit
 		return false;
@@ -226,6 +246,10 @@ bool Triangle::intersection(Ray& r, float& t, float& u, float& v) //barycentric
 
 	u = beta;
 	v = gamma;
+
+	auto end = std::chrono::high_resolution_clock::now();
+	Timer::add("triIntersection()", std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count());
+
 	return true;
 	//idea behind this algorithm is to compute the area of the triangle and the triangles
 	//which are created by making edges from v0, v1 and v2 to the point where r hits

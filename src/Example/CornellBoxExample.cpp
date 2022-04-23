@@ -1,4 +1,4 @@
-#include "CornellBoxExample.h"
+﻿#include "CornellBoxExample.h"
 
 #include<stb_image_write.h>
 #include<vector>
@@ -6,14 +6,13 @@
 #include<glm/trigonometric.hpp>
 
 #include"Log.h"
-#include"Renderer/IntersectionTests.h"
 #include"Model/Material.h"
 
 #include"Renderer/Models/Reflection.h"
 #include"Random.h"
 
-CornellBoxExample::CornellBoxExample(Image& img)
-	:Example(img), m_cornellBox("res/models/CornellBoxOriginal/CornellBoxOriginal.obj", {0, -1, -1.5})
+CornellBoxExample::CornellBoxExample(Image& img, int maxDepth, int nSamples)
+	:Example(img, "res/models/CornellBoxOriginal/CornellBoxOriginal.obj", {0, -1, -1.5}, maxDepth, nSamples)
 {
 	m_camera.position = {0, 0, 0};
 	m_camera.target = {0, 0, -1};
@@ -25,7 +24,7 @@ CornellBoxExample::CornellBoxExample(Image& img)
 
 void CornellBoxExample::draw()
 {
-	int nSamples = 100; //temp
+	float invSamples = 1.f / m_nSamples;
 	for(unsigned y = 0; y < m_image.height; y++)
 	for(unsigned x = 0; x < m_image.width; x++)
 	{
@@ -34,7 +33,7 @@ void CornellBoxExample::draw()
 		pixel.x = x;
 		pixel.y = y;
 
-		for(int n = 0; n < nSamples; n++)
+		for(int n = 0; n < m_nSamples; n++)
 		{
 			float xOff = Random::getFloatInRange(-0.5f, 0.5f);
 			float yOff = Random::getFloatInRange(-0.5f, 0.5f);
@@ -42,7 +41,7 @@ void CornellBoxExample::draw()
 			color += tracePath(r, 0);
 		}
 
-		color /= nSamples;
+		color *= invSamples;
 		setPixelColor(x, y, color);
 
 		/*for(Triangle& tri : m_cornellBox)
@@ -88,141 +87,5 @@ void CornellBoxExample::draw()
 			}
 		}*/
 	}
-	Log::info("abc");
-	stbi_write_png("output/cornellBox.png", m_image.width, m_image.height, m_image.channels, m_image.data, m_image.step);
-}
-
-
-//references
-//https://www.youtube.com/watch?v=odXCvJTNn6s&list=PLQ3UicqQtfNuBjzJ-KEWmG1yjiRMXYKhh&index=16
-//https://en.wikipedia.org/wiki/Path_tracing
-
-//problem:
-//not considering closest tri, so stuff gets messed up
-//to fix, go through all tris find closest
-//then do the path tracing stuff
-
-glm::vec3 CornellBoxExample::tracePath(Ray& r, int depth)
-{
-	static int maxDepth = 5;
-	static glm::vec3 white(1.f);
-	static float p = 1 / 6.28318530718f;
-
-	if(depth >= maxDepth)
-		return glm::vec3(0);
-
-	glm::vec3 color(0);
-	Triangle* closest = nullptr;
-	float tMin = std::numeric_limits<float>::infinity();
-
-	//get closest intersection
-	for(Triangle& tri : m_cornellBox)
-	{
-		float u, v, t;
-
-		if(tri.intersection(r, t, u, v))
-		{
-			if(t < tMin)
-			{
-				tMin = t;
-				closest = &tri;
-			}
-		}
-	}
-	if(closest == nullptr || tMin < 0 || tMin == std::numeric_limits<float>::infinity())
-		return glm::vec3(0);
-
-	glm::vec3 lightPos = {0, 0.85, -1.55};
-	glm::vec3 intersectionPoint = r(tMin);
-	glm::vec3 surfaceNormal = closest->getNormal();
-
-	//shadow ray
-	Material mat = closest->getMaterial();
-
-	//generate secondary ray
-	Ray secondary;
-
-	//reference
-	//https://gist.github.com/andrewbolster/10274979
-	//generate random unit vector
-	float phi = Random::getFloatInRange(0.f, 6.28318530718f); //phi = [0, 2pi]
-	float costheta = Random::getFloatInRange(-1, 1);
-	float theta = glm::acos(costheta);
-
-	glm::vec3 dir(0.f);
-	dir.x = glm::sin(theta) * glm::cos(phi);
-	dir.y = glm::sin(theta) * glm::sin(phi);
-	dir.z = costheta;
-
-	//reference
-	//https://math.stackexchange.com/questions/4010111/how-to-generate-a-random-vector-guaranteed-to-be-within-the-hemisphere-with-res
-	if(glm::dot(surfaceNormal, dir) <= 0)
-		dir *= -1;
-
-	secondary.origin = intersectionPoint + 0.1f * dir;
-	secondary.direction = dir;
-
-	float dp = glm::dot(dir, surfaceNormal);
-
-	//brdf
-	float distance = glm::distance(lightPos, intersectionPoint);
-	float attenuation = 1.f / (distance * distance);
-
-	glm::vec3 wi = lightPos - intersectionPoint;
-	glm::vec3 wo = m_camera.position - intersectionPoint;
-
-	glm::vec3 emittance = {0, 0, 0}; //temp
-	glm::vec3 brdf = BRDF::blinnPhong(wi, wo, surfaceNormal, mat) * attenuation;
-
-	glm::vec3 li = tracePath(secondary, depth + 1);
-	glm::vec3 lo = (li + brdf);// *dp / p;
-	//glm::vec3 lo = (brdf + li) * dp * p;
-
-	glm::vec3 shadowDir = glm::normalize(lightPos - intersectionPoint);
-	Ray shadow(intersectionPoint + (0.01f * surfaceNormal), shadowDir);
-
-	if(inShadow(shadow))
-		return li;
-
-	return glm::min(lo, white);
-}
-
-bool CornellBoxExample::inShadow(Ray& r)
-{
-	for(Triangle& tri : m_cornellBox)
-	{
-		if(tri.getMaterial().name == "light")
-			continue;
-		float t, u, v;
-		//the tri material checks here are temp until i figure out why the entire scene becomes enveloped in a shadow when i dont do this
-		if(tri.intersection(r, t, u, v) && (tri.getMaterial().name == "tallBox" || tri.getMaterial().name == "shortBox"))
-		{
-			return true;
-		}
-	}
-	return false;
-
-	float tMin = std::numeric_limits<float>::infinity();
-	Triangle* closest = nullptr;
-	//get closest intersection
-	for(Triangle& tri : m_cornellBox)
-	{
-		float u, v, t;
-
-		if(tri.intersection(r, t, u, v))
-		{
-			if(t < tMin)
-			{
-				tMin = t;
-				closest = &tri;
-			}
-		}
-	}
-	if(closest == nullptr)
-		return false;
-
-	if(closest->getMaterial().name == "light" || tMin <= 0)
-		return false;
-
-	return true;
+	writeImage("cornellBox");
 }

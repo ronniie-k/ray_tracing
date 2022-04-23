@@ -6,6 +6,8 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include"tiny_obj_loader.h"
 
+#include"../Instrumentor.h"
+
 Model::Model(const std::string& filepath, const glm::vec3& offset)
 {
 	std::string warn, error, directory;
@@ -80,4 +82,38 @@ Model::Model(const std::string& filepath, const glm::vec3& offset)
 		mat.d = material.dissolve;
 		m_materials.push_back(mat);
 	}
+}
+
+Model::Model(Model& other)
+	:m_triangles(other.m_triangles), m_materials(other.m_materials)
+{
+	Log::info("dd");
+}
+
+Model& Model::operator=(const Model& rhs)
+{
+	Log::info("d");
+	if(this != &rhs)
+	{
+		m_triangles = rhs.m_triangles;
+		m_materials = rhs.m_materials;
+	}
+
+	return *this;
+}
+
+Model::Model(Model&& other)
+	:m_triangles(std::move(other.m_triangles)), m_materials(std::move(other.m_materials))
+{
+}
+
+Model& Model::operator=(Model&& rhs)
+{
+	if(this != &rhs)
+	{
+		m_triangles = std::move(rhs.m_triangles);
+		m_materials = std::move(rhs.m_materials);
+	}
+
+	return *this;
 }
